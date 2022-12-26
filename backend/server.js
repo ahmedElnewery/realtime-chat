@@ -24,13 +24,55 @@ const server = http.createServer((request, response) => {
   });
 });
 
+
+server.addListener("upgrade",(req,socket)=>{
+  if(req.headers["upgrade"] !== "websocket"){
+    socket.end("400 Bad request ")
+    
+    return;
+  }
+  connections.push(socket)
+
+  const acceptKey = req.headers["sec-websocket-key"];
+  const acceptValue = generateAcceptValue(acceptKey);
+  const headers = [
+    "HTTP/1.1 101 Web Socket Protocol Handshake",
+    "Upgrade: WebSocket",
+    "Connection: Upgrade",
+    `Sec-WebSocket-Accept: ${acceptValue}`,
+    "Sec-WebSocket-Protocol: json",
+    "\r\n",
+  ];
+  
+  socket.write(headers.join("\r\n"));
+  socket.write(objToResponse({msg:getMsgs()}))
+
+  socket.on("data", (buffer) => {
+    const message = parseMessage(buffer)
+    if(message){
+      msg.push({
+        user:message.user,
+        text:message.text,
+        time:Date.now()
+      })
+      connections.forEach(socket=>{
+        socket.write(objToResponse({msg:getMsgs()}))
+
+      })
+    }
+  });
+  socket.addListener("end",(s)=>{
+    connections.filter(socket=>socket.id === s.id)
+  })
+})
+
 /*
  *
  * your code goes here
  *
  */
 
-const port = process.env.PORT || 8080;
+const port = process.env.PORT || 9090;
 server.listen(port, () =>
   console.log(`Server running at http://localhost:${port}`)
 );
