@@ -1,7 +1,7 @@
 import http from "http";
 import handler from "serve-handler";
 import nanobuffer from "nanobuffer";
-
+import { Server } from "socket.io";
 // these are helpers to help you deal with the binary data that websockets use
 // import objToResponse from "./obj-to-response.js";
 // import generateAcceptValue from "./generate-accept-value.js";
@@ -23,12 +23,34 @@ const server = http.createServer((request, response) => {
     public: "./frontend",
   });
 });
+const io = new Server(server, {});
+io.on("connection", (socket) => {
+  console.log("connected..", socket.id)
+
+  socket.emit("msg:get", { msg: getMsgs() })
+
+  socket.on("disconnected", () => {
+    console.log("disconnected..", socket.id)
+  })
+
+
+
+  socket.on("msg:post", (data) => {
+    msg.push({
+      user: data.user,
+      text: data.text,
+      time: Date.now(),
+    })
+    io.emit("msg:get", { msg: getMsgs() })
+  })
+
+})
 
 // establish  websocket connection by hand
 // server.addListener("upgrade",(req,socket)=>{
 //   if(req.headers["upgrade"] !== "websocket"){
 //     socket.end("400 Bad request ")
-    
+
 //     return;
 //   }
 //   connections.push(socket)
@@ -43,7 +65,7 @@ const server = http.createServer((request, response) => {
 //     "Sec-WebSocket-Protocol: json",
 //     "\r\n",
 //   ];
-  
+
 //   socket.write(headers.join("\r\n"));
 //   socket.write(objToResponse({msg:getMsgs()}))
 

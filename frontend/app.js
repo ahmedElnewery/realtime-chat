@@ -9,6 +9,21 @@ chat.addEventListener("submit", function (e) {
   postNewMsg(chat.elements.user.value, chat.elements.text.value);
   chat.elements.text.value = "";
 });
+const socket = io("localhost:9090")
+socket.on("connect",()=>{
+  presence.innerText = "🟢"
+})
+socket.on("disconnect",()=>{
+  presence.innerText = "🔴"
+})
+socket.on("msg:get",(data)=>{
+  allChat = data.msg
+  render()
+})
+ function postNewMsg(user, text) {
+  const data = {user,text}
+  socket.emit("msg:post",data)
+}
 
   // adding websocket logic in client without any libraries
 // const ws = new WebSocket("ws://localhost:9090",["json"])
